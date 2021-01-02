@@ -3,19 +3,33 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 500;
 
+ctx.font = '30px Georgia';
+
 window.addEventListener('DOMContentLoaded', (event) => {
   const audio = document.querySelector('audio');
   audio.volume = 0.4;
   audio.play();
 });
+
 let score = 0;
 let gameFrame = 0;
 let gameOver = false;
+let itemSpeed;
+let level = 0;
+let level_indicator = false;
+let Leben = 100;
+let current_frame = 0;
+let current_score = 5;
+let collision_effect = false;
 
 //key activity
 keys = [];
 
 //Adding the assets
+
+const background = new Image();
+background.src = './static/example.png';
+
 const cloud = new Image();
 cloud.src = './static/cloud.png';
 
@@ -35,10 +49,34 @@ const tisch = new Image();
 tisch.src = './static/tisch.png';
 
 const bier = new Image();
-bier.src = './static/bier_mas2.png';
+bier.src = './static/bier_mug.png';
+const uzoo = new Image();
+uzoo.src = './static/uzo.png';
+
+const cupmagic = new Image();
+cupmagic.src = './static/cupmagic.png';
+
+const cupmagic2 = new Image();
+cupmagic2.src = './static/cupmagic2.png';
 
 const judi = new Image();
-judi.src = './static/judi_last.png';
+judi.src = './static/Sprite-0001_last.png';
+
+//audios
+
+const ouzo_audio = document.createElement('audio');
+ouzo_audio.src = './static/sounds/ouzo.mp3';
+ouzo_audio.volume = 1;
+
+const point = document.createElement('audio');
+point.src = './static/sounds/point.wav';
+
+const fehler = document.createElement('audio');
+fehler.src = './static/sounds/fehler.wav';
+
+const game_over = document.createElement('audio');
+game_over.src = './static/sounds/game_over.wav';
+
 function collision(r1, r2) {
   /* return !(
       first.x > second.x + second.width ||
@@ -53,12 +91,13 @@ function collision(r1, r2) {
     r1.y + r1.collisonHeight < r2.y
   );
 }
+
 class Player {
   constructor() {
-    this.spriteWidth = 4800 / 12; // - 330; //needs to be changed based on the characted
-    this.spriteHeight = 2320 / 4 - 50; //- 33; //needs to be changed based on the characted
+    this.spriteWidth = 4900 / 12; // - 330; //needs to be changed based on the characted
+    this.spriteHeight = 3300 / 5; //1102 / 2; //- 33; //needs to be changed based on the characted
     this.x = 580; //350;
-    this.y = 460; //337;
+    this.y = 370; //337;
     this.width = this.spriteWidth; //6;
     this.height = this.spriteHeight; //2;
     this.frameX = 0;
@@ -66,7 +105,7 @@ class Player {
     this.frame = 0;
     this.speed = 5;
     this.moving = false;
-    this.collisonWidth = this.width / 4;
+    this.collisonWidth = this.width / 5;
     this.collisonHeight = this.height / 5;
     //this.sound = sound1; //Math.random() <= 0.5 ? 'sound1' : 'sound2';
   }
@@ -80,6 +119,12 @@ class Player {
         if (mouse.y != this.y) {
           this.y -= dy / 30;
         } */
+    if (collision_effect) {
+      /* window.addEventListener('keydown', function (e) {
+        e.preventDefault();
+      }); */
+      return;
+    }
 
     if (keys['ArrowLeft'] && this.x > 0) {
       this.x -= this.speed;
@@ -108,8 +153,28 @@ class Player {
     }
   }
 
+  collisionEffect() {
+    if (gameFrame % 5 == 0) {
+      this.frame++;
+      /*   if (this.frame >= 8) this.frame = 0;
+
+      if (this.frame == 8) {
+        this.frameX = 0;
+      } else {
+        this.frameX++;
+      } */
+      if (this.frame % 12 == 0) {
+        this.frameX = 0;
+        collision_effect = false;
+      } else {
+        this.frameY = 2;
+        this.frameX++;
+      }
+    }
+  }
+
   draw() {
-    /*   ctx.fillStyle = 'red';
+    /* ctx.fillStyle = 'red';
     ctx.beginPath();
     //ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.rect(this.x, this.y, this.collisonWidth, this.collisonHeight);
@@ -130,14 +195,15 @@ class Player {
 
 class Bier {
   constructor() {
-    this.x = Math.random() * (canvas.width - 32) + 32; //Math.random() * canvas.width;
-    this.y = 0;
     this.speed = Math.random() * 5 + 1;
-    this.width = 32;
-    this.height = 32;
+    this.width = 335;
+    this.height = 368;
     this.counted = false;
-    this.collisonHeight = this.height * 2;
-    this.collisonWidth = this.width * 2;
+    this.collisonHeight = this.height / 8;
+    this.collisonWidth = this.width / 8 - 5;
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;
+    this.y = 0;
   }
 
   update() {
@@ -147,11 +213,11 @@ class Bier {
     this.distance = Math.sqrt(dx * dx + dy * dy); */
   }
   draw() {
-    ctx.fillStyle = 'red';
+    /* ctx.fillStyle = 'red';
     ctx.beginPath();
     //ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.rect(this.x, this.y, this.width, this.height);
-    ctx.fill();
+    ctx.rect(this.x, this.y, this.collisonWidth, this.collisonHeight);
+    ctx.fill(); */
     ctx.drawImage(
       bier,
       0,
@@ -160,8 +226,8 @@ class Bier {
       this.height,
       this.x,
       this.y,
-      this.width,
-      this.height
+      this.collisonWidth,
+      this.collisonHeight
     );
   }
 }
@@ -172,8 +238,8 @@ function drawHouse() {
     0,
     1024,
     973,
-    canvas.width - 210,
-    170,
+    canvas.width - 190,
+    190,
     1024 / 8,
     973 / 8
   );
@@ -309,17 +375,278 @@ class DegirmenSail {
   }
 }
 
+class Uzo {
+  constructor() {
+    this.speed = Math.random() * 10 + 5;
+    this.distance; //Keep the information of the distance between objects and player
+    this.width = 130;
+    this.height = 500;
+    this.frameX = 0;
+    this.frameY = 0;
+    this.frame = 0;
+    this.collisonHeight = this.height / 4.5;
+    this.collisonWidth = this.width / 4.5;
+    this.counted = false;
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;; //Math.random() * canvas.width;
+    this.y = 0;
+
+    /*
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;
+    this.y = 0;
+    */
+  }
+
+  update() {
+    this.y += this.speed;
+  }
+
+  draw() {
+    /* ctx.fillStyle = 'blue';
+    ctx.beginPath();
+    // ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.rect(this.x, this.y, this.collisonWidth, this.collisonHeight);
+    ctx.fill();
+ */
+    ctx.drawImage(
+      uzoo,
+      this.width * this.frameX,
+      this.height * this.frameY,
+      this.width,
+      this.height,
+      this.x,
+      this.y,
+      this.collisonWidth,
+      this.collisonHeight
+    );
+  }
+}
+
+class Enemy {
+  constructor() {
+    this.speed = Math.random() * 8 + itemSpeed + 1;
+    this.distance; //Keep the information of the distance between objects and player
+    this.width = 121;
+    this.height = 140;
+    this.frameX = 0;
+    this.frameY = 0;
+    this.frame = 0;
+    this.collisonHeight = this.height / 4;
+    this.collisonWidth = this.width / 4;
+    this.counted = false;
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;; //Math.random() * canvas.width;
+    this.y = 0;
+
+    /*
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;
+    this.y = 0;
+    */
+  }
+
+  update() {
+    this.y += this.speed + itemSpeed;
+  }
+
+  draw() {
+    /*  ctx.fillStyle = 'green';
+    ctx.beginPath();
+    // ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.rect(this.x, this.y, this.collisonWidth, this.collisonHeight);
+    ctx.fill();
+ */
+    ctx.drawImage(
+      cupmagic,
+      this.width * this.frameX,
+      this.height * this.frameY,
+      this.width,
+      this.height,
+      this.x,
+      this.y,
+      this.collisonWidth,
+      this.collisonHeight
+    );
+  }
+}
+
+class Enemy2 {
+  constructor() {
+    this.speed = Math.random() * 8 + itemSpeed + 1;
+    this.distance; //Keep the information of the distance between objects and player
+    this.width = 121;
+    this.height = 140;
+    this.frameX = 0;
+    this.frameY = 0;
+    this.frame = 0;
+    this.collisonHeight = this.height / 4;
+    this.collisonWidth = this.width / 4;
+    this.counted = false;
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;; //Math.random() * canvas.width;
+    this.y = 0;
+
+    /*
+    this.x =
+      Math.random() * (canvas.width - this.collisonWidth) + this.collisonWidth; //Math.random() * canvas.width;
+    this.y = 0;
+    */
+  }
+
+  update() {
+    this.y += this.speed + itemSpeed;
+  }
+
+  draw() {
+    ctx.drawImage(
+      cupmagic2,
+      this.width * this.frameX,
+      this.height * this.frameY,
+      this.width,
+      this.height,
+      this.x,
+      this.y,
+      this.collisonWidth,
+      this.collisonHeight
+    );
+  }
+}
+let enemies = [];
+let enemies2 = [];
+let uzo = [];
 let player = new Player();
 let bier1 = new Bier();
+let enemy1 = new Enemy();
+let enemy = new Enemy2();
+
+function handleEnemies() {
+  if (gameFrame % 80 == 0) {
+    enemies.push(new Enemy());
+  }
+
+  if (level >= 2 && gameFrame % 150 == 0) {
+    enemies2.push(new Enemy2());
+  }
+  //For enemies
+  for (let i = 0; i < enemies.length; i++) {
+    enemies[i].update();
+    enemies[i].draw();
+  }
+  for (let i = 0; i < enemies2.length; i++) {
+    enemies2[i].update();
+    enemies2[i].draw();
+  }
+  for (let i = 0; i < enemies.length; i++) {
+    if (enemies[i].y < 0) {
+      enemies.splice(i, 1);
+      i--;
+    }
+    if (enemies[i]) {
+      if (enemies[i].distance < 20) {
+        if (!enemies[i].counted) {
+          //sound1.play();
+          ///score++;
+          enemies[i].counted = true;
+          enemies.splice(i, 1);
+          i--;
+        }
+      }
+
+      if (collision(player, enemies[i])) {
+        if (!enemies[i].counted) {
+          //score = score - 2;
+          fehler.play();
+          Leben = Leben - 10;
+          enemies[i].counted = true;
+          enemies.splice(i, 1);
+          i--;
+        }
+        collision_effect = true;
+      }
+    }
+  }
+  for (let i = 0; i < enemies2.length; i++) {
+    if (enemies2[i].y < 0) {
+      enemies2.splice(i, 1);
+      i--;
+    }
+    if (enemies2[i]) {
+      if (enemies2[i].distance < 20) {
+        if (!enemies2[i].counted) {
+          //sound1.play();
+          //score++;
+          enemies2[i].counted = true;
+          enemies2.splice(i, 1);
+          i--;
+        }
+      }
+
+      if (collision(player, enemies2[i])) {
+        if (!enemies2[i].counted) {
+          //score = score - 2;
+          fehler.play();
+          if (Leben > 0) {
+            Leben = Leben - 20;
+          }
+          enemies2[i].counted = true;
+          enemies2.splice(i, 1);
+          i--;
+        }
+        collision_effect = true;
+      }
+    }
+  }
+}
+
+function handleUzo() {
+  if (gameFrame % 500 == 0) {
+    uzo.push(new Uzo());
+  }
+  //For enemies
+  for (let i = 0; i < uzo.length; i++) {
+    uzo[i].update();
+    uzo[i].draw();
+  }
+  for (let i = 0; i < uzo.length; i++) {
+    if (uzo[i].y < 0) {
+      uzo.splice(i, 1);
+      i--;
+    }
+    if (uzo[i]) {
+      if (uzo[i].distance < 20) {
+        if (!uzo[i].counted) {
+          //sound1.play();
+          score++;
+          uzo[i].counted = true;
+          uzo.splice(i, 1);
+          i--;
+        }
+      }
+
+      if (collision(player, uzo[i])) {
+        if (!uzo[i].counted) {
+          //score = score + 10;
+          ouzo_audio.play();
+          Leben = Leben + 10;
+          uzo[i].counted = true;
+          uzo.splice(i, 1);
+          i--;
+        }
+      }
+    }
+  }
+}
+
 function handleCharacterFrame() {
   if (gameFrame % 3 == 0) {
-    if (player.frameX < 12 && player.moving) player.frameX++;
+    if (player.frameX < 11 && player.moving) player.frameX++;
     else player.frameX = 0;
   }
 
-  if (!player.moving) {
+  /* if (!player.moving) {
     player.frameY = 2;
-  }
+  } */
 }
 
 let biers = [];
@@ -340,7 +667,7 @@ function handleObjects() {
     if (biers[i]) {
       if (biers[i].distance < 20) {
         if (!biers[i].counted) {
-          sound1.play();
+          //sound1.play();
           score++;
           biers[i].counted = true;
           biers.splice(i, 1);
@@ -350,6 +677,7 @@ function handleObjects() {
 
       if (collision(player, biers[i])) {
         if (!biers[i].counted) {
+          point.play();
           score++;
           biers[i].counted = true;
           biers.splice(i, 1);
@@ -360,8 +688,8 @@ function handleObjects() {
   }
 }
 
-let Tree1 = new Tree(5, 170);
-let Tree2 = new Tree(canvas.width - 75, 170);
+let Tree1 = new Tree(5, 200);
+let Tree2 = new Tree(canvas.width - 60, 190);
 let Tree3 = new Tree(5, canvas.height - 140);
 let Tree4 = new Tree(canvas.width - 75, canvas.height - 140);
 
@@ -374,6 +702,27 @@ for (let i = 0; i < canvas.width - 133; i += 95) {
   aClouds.push(new Clouds(i, -5));
 }
 
+function checkLevel() {
+  if (score % 10 == 0 && score > 0) {
+    level = score / 10;
+    //itemSpeed = score / ;
+  }
+}
+
+function checkDifficulty() {
+  itemSpeed = level * 0.5;
+}
+
+function handleGameOver() {
+  const audio = document.querySelector('audio');
+  audio.pause();
+  ctx.fillStyle = 'black';
+  ctx.fillText('GAME OVER', 290, 250);
+  ctx.fillText('Your Score: ' + score, 290, 300);
+  gameOver = true;
+  game_over.play();
+}
+
 let fps, fpsInterval, startTime, now, then, elapsed;
 function startAnimating(fps) {
   fpsInterval = 1000 / fps;
@@ -382,7 +731,7 @@ function startAnimating(fps) {
   animate();
 }
 function animate() {
-  requestAnimationFrame(animate);
+  if (!gameOver) requestAnimationFrame(animate);
   now = Date.now();
   elapsed = now - then;
 
@@ -391,6 +740,8 @@ function animate() {
     for (element of aClouds) {
       element.draw();
     }
+    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
     drawHouse();
     drawTisch();
     Tree1.draw(2, 2);
@@ -401,14 +752,56 @@ function animate() {
     degirmen_sail1.update();
     degirmen_sail1.draw();
     handleObjects();
-    bier1.update();
-    bier1.draw();
+    //bier1.update();
+    //bier1.draw();
+    handleEnemies();
+    handleUzo();
     player.update();
     player.draw();
     handleCharacterFrame();
+    checkLevel();
+    checkDifficulty();
+    /*   if (score % 10 == 0 || level_indicator) {
+      level_indicator = true;
+
+      if (gameFrame % 100 == 0) {
+        current_frame++;
+      }
+      ctx.fillStyle = 'red';
+      ctx.fillText(' Level:' + level, canvas.width / 2, canvas.height / 2); // alle Quark eingesammelt
+      if (current_frame == 4) {
+        level_indicator = false;
+        level++;
+        current_frame = 0;
+        itemSpeed++;
+      }
+    } */
+    if (collision_effect) {
+      player.collisionEffect();
+    }
+    ctx.fillStyle = 'red';
+    ctx.fillText(' Level:' + level, canvas.width - 260, 50);
+    ctx.fillStyle = 'red';
+    ctx.fillText(' Leben:' + Leben, canvas.width - 150, 50);
     ctx.fillStyle = 'black';
     ctx.fillText('Bier eingesammelt:' + score, 10, 50); // alle Quark eingesammelt
+    if (Leben < 0) {
+      handleGameOver();
+    }
+    if (score > 8 && score < 12) {
+      ctx.fillStyle = 'black';
+      ctx.fillText('GUAD', 320, 150);
+    }
+    if (score > 20 && score < 24) {
+      ctx.fillStyle = 'black';
+      ctx.fillText(' SAKRISCH GUAD', 320, 150);
+    }
+    if (score > 30 && score < 34) {
+      ctx.fillStyle = 'black';
+      ctx.fillText(' WER KO, DEA KO', 320, 150);
+    }
     gameFrame++;
+
     /*  cloud1.draw();
   cloud2.draw(); */
   }
@@ -424,4 +817,4 @@ window.addEventListener('keyup', function (e) {
   player.moving = false;
 });
 
-startAnimating(27);
+startAnimating(32);
